@@ -5,6 +5,7 @@ pubDatetime: 2022-06-09T03:42:51Z
 slug: how-do-i-develop-my-terminal-portfolio-website-with-react
 featured: false
 draft: false
+categories: ["Web developement"]
 tags:
   - JavaScript
   - ReactJS

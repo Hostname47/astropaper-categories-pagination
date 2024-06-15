@@ -1,0 +1,37 @@
+---
+import Header from "@components/Header.astro";
+import Footer from "@components/Footer.astro";
+import Layout from "@layouts/Layout.astro";
+import Main from "@layouts/Main.astro";
+import getUniqueCategories from "@utils/getUniqueCategories";
+import Category from "@components/Category";
+
+let categories = await getUniqueCategories();
+---
+
+<Layout title="Categories">
+  <Header activeNav="categories" />
+  <Main
+    pageTitle="Categories"
+    pageDesc="All categories and areas our blog cover."
+  >
+    {
+      categories.length ? (
+        <ul>
+          {categories.map(({ category, lastPost }) => (
+            <Category client:load title={category} {lastPost} />
+          ))}
+        </ul>
+      ) : (
+        <div class="flex flex-col items-center justify-center gap-6">
+          <h2 class="text-xl font-bold tracking-wide">
+            Empty categories list !
+          </h2>
+          <p>We're working to add new content and cover different categories</p>
+          <p class="block text-lg font-medium text-gray-500">Stay tunned !</p>
+        </div>
+      )
+    }
+  </Main>
+  <Footer />
+</Layout>

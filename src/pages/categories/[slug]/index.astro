@@ -1,0 +1,46 @@
+---
+import { getCollection } from "astro:content";
+import Header from "@components/Header.astro";
+import Footer from "@components/Footer.astro";
+import Layout from "@layouts/Layout.astro";
+import Main from "@layouts/Main.astro";
+import { SITE } from "@config";
+import getUniqueCategories from "@utils/getUniqueCategories";
+import Card from "@components/Card";
+
+export const getStaticPaths = async () => {
+  const categories = await getUniqueCategories();
+
+  // First define routes for categories normally
+  const categoriesPaths = categories.map(category => ({
+    params: { slug: category.slug },
+    props: { category: category.category },
+  }));
+
+  return [...categoriesPaths];
+};
+
+const { category } = Astro.props;
+
+const posts = await getCollection("blog");
+const categoryPosts = posts.filter(post =>
+  post.data.categories.includes(category)
+);
+---
+
+<Layout title={`${category} | ${SITE.title}`}>
+  <Header activeNav="categories" />
+  <Main
+    pageTitle={category + "'s posts"}
+    pageDesc={`All posts within "${category}" category`}
+  >
+    <ul>
+      {
+        categoryPosts.map(({ data, slug }) => (
+          <Card href={`/posts/${slug}/`} frontmatter={data} />
+        ))
+      }
+    </ul>
+  </Main>
+  <Footer />
+</Layout>

@@ -1,0 +1,84 @@
+---
+import Card from "@components/Card";
+import Footer from "@components/Footer.astro";
+import Header from "@components/Header.astro";
+import Pagination from "@components/Pagination.astro";
+import { SITE } from "@config";
+import Layout from "@layouts/Layout.astro";
+import Main from "@layouts/Main.astro";
+import getPageNumbers from "@utils/getPageNumbers";
+import getPagination from "@utils/getPagination";
+import { slugifyStr } from "@utils/slugify";
+import type { GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+
+export const getStaticPaths = (async () => {
+  // I. Handle categories paths
+  const posts = await getCollection("blog");
+  // 1. First we get the number of posts within each category
+  const categoriesStats: {
+    category: string;
+    slug: string;
+    count: number;
+  }[] = [];
+  posts.forEach(post => {
+    post.data.categories.forEach(category => {
+      const slug = slugifyStr(category);
+      const record = categoriesStats.find(c => c.category === category);
+
+      if (record) {
+        record.count++;
+      } else {
+        categoriesStats.push({ category, slug, count: 1 });
+      }
+    });
+  });
+  // 2. Fedine routes for pagination
+  const paginationPaths = categoriesStats
+    .map(categoryStats => {
+      return getPageNumbers(categoryStats.count).map(value => ({
+        params: {
+          slug: `${categoryStats.slug}`,
+          page: value,
+        },
+        props: { category: categoryStats.category },
+      }));
+    })
+    .flat();
+
+  return [...paginationPaths];
+}) satisfies GetStaticPaths;
+
+const { slug, page } = Astro.params;
+const { category } = Astro.props;
+
+const posts = await getCollection("blog");
+const { paginatedPosts, totalPages, currentPage } = getPagination({
+  posts: posts.filter(p => p.data.categories.includes(category)),
+  page,
+});
+---
+
+<Layout title={`${category} | ${SITE.title}`}>
+  <Header activeNav="categories" />
+  <Main
+    pageTitle={category + "'s posts"}
+    pageDesc={`All posts within "${category}" category`}
+  >
+    <ul>
+      {
+        paginatedPosts.map(({ data, slug }) => (
+          <Card href={`/posts/${slug}/`} frontmatter={data} />
+        ))
+      }
+    </ul>
+
+    <Pagination
+      {currentPage}
+      {totalPages}
+      prevUrl={`/categories/${slug}/${currentPage - 1 !== 1 ? "/" + (currentPage - 1) : ""}/`}
+      nextUrl={`/categories/${slug}/${currentPage + 1}/`}
+    />
+  </Main>
+  <Footer />
+</Layout>

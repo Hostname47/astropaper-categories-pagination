@@ -7,6 +7,8 @@ import Main from "@layouts/Main.astro";
 import { SITE } from "@config";
 import getUniqueCategories from "@utils/getUniqueCategories";
 import Card from "@components/Card";
+import Pagination from "@components/Pagination.astro";
+import getPagination from "@utils/getPagination";
 
 export const getStaticPaths = async () => {
   const categories = await getUniqueCategories();
@@ -20,12 +22,18 @@ export const getStaticPaths = async () => {
   return [...categoriesPaths];
 };
 
+const { slug } = Astro.params;
 const { category } = Astro.props;
 
 const posts = await getCollection("blog");
 const categoryPosts = posts.filter(post =>
   post.data.categories.includes(category)
 );
+const { paginatedPosts, totalPages, currentPage } = getPagination({
+  posts: categoryPosts,
+  page: 1,
+  isIndex: true,
+});
 ---
 
 <Layout title={`${category} | ${SITE.title}`}>
@@ -36,11 +44,18 @@ const categoryPosts = posts.filter(post =>
   >
     <ul>
       {
-        categoryPosts.map(({ data, slug }) => (
+        paginatedPosts.map(({ data, slug }) => (
           <Card href={`/posts/${slug}/`} frontmatter={data} />
         ))
       }
     </ul>
+
+    <Pagination
+      {currentPage}
+      {totalPages}
+      prevUrl={`/categories/${slug}/${currentPage - 1 !== 1 ? "/" + (currentPage - 1) : ""}/`}
+      nextUrl={`/categories/${slug}/${currentPage + 1}/`}
+    />
   </Main>
   <Footer />
 </Layout>
